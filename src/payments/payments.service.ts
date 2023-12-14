@@ -22,7 +22,6 @@ export class PaymentsService {
     let sumAmount = 0;
     console.log(paymentRequestBody);
 
-    // Vérifiez que cartItems est défini et est un tableau
     if (
       !paymentRequestBody.cartItems ||
       !Array.isArray(paymentRequestBody.cartItems)
@@ -30,12 +29,10 @@ export class PaymentsService {
       throw new Error('Invalid cartItems in the request.');
     }
 
-    // Calculez le montant total à partir des éléments du panier
     paymentRequestBody.cartItems.forEach((product) => {
       sumAmount += product.price * product.quantity;
     });
 
-    // Utilisez le montant total pour créer le paiement avec Stripe
     try {
       const paymentIntent = await this.stripe.paymentIntents.create({
         amount: sumAmount,
@@ -44,8 +41,6 @@ export class PaymentsService {
 
       console.log('PaymentIntent created:', paymentIntent);
 
-      // Créez une session de paiement avec Stripe et obtenez l'ID de session
-      // mettre les produits dans la session
       const session = await this.stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [
@@ -53,7 +48,7 @@ export class PaymentsService {
             price_data: {
               currency: 'eur',
               product_data: {
-                name: 'Commande', // Mettez le nom de votre produit ici
+                name: 'Commande',
               },
               unit_amount: sumAmount * 100,
             },
@@ -61,11 +56,10 @@ export class PaymentsService {
           },
         ],
         mode: 'payment',
-        success_url: 'http://localhost:5173/', // Remplacez par votre URL de réussite
-        cancel_url: 'http://localhost:5173/', // Remplacez par votre URL d'annulation
+        success_url: 'http://localhost:5173/success',
+        cancel_url: 'http://localhost:5173/cancel',
       });
 
-      // Ajoutez l'ID de session à la réponse
       return { paymentIntent, sessionId: session.id };
     } catch (error) {
       console.error('Error creating PaymentIntent:', error);
